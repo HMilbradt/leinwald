@@ -1,6 +1,8 @@
 import { Observable } from 'rxjs';
 import { LeinwaldCanvas } from './core/canvas';
 
+const ZOOM_SPEED = 0.1;
+
 export interface LeinwaldOptions {
   element: HTMLElement | string;
   canvas_id: string
@@ -95,7 +97,7 @@ export const Leinwald = (options: LeinwaldOptions) => {
     scaleY: 1,
   }
 
-  const scrollSpeed = 0.1;
+  const scrollSpeed = 0.01;
 
   const elements = [
     {
@@ -125,11 +127,14 @@ export const Leinwald = (options: LeinwaldOptions) => {
     elements.forEach((element) => {
       const { x, y, width, height } = element;
 
-      const viewportX = element.x + viewportTransform.x
-      const viewportY = element.y + viewportTransform.y
+      const viewportX = (x + viewportTransform.x) * viewportTransform.scaleX;
+      const viewportY = (y + viewportTransform.y) * viewportTransform.scaleY;
+
+      const viewportWidth = width * viewportTransform.scaleX;
+      const viewportHeight = height * viewportTransform.scaleY;
 
       if (element.type === 'rect') {
-        context.fillRect(viewportX, viewportY, element.width, element.height);
+        context.fillRect(viewportX, viewportY, viewportWidth, viewportHeight);
       }
     })
 
@@ -154,8 +159,6 @@ export const Leinwald = (options: LeinwaldOptions) => {
       viewportTransform.x += differenceX;
       viewportTransform.y += differenceY;
 
-      console.log(viewportTransform)
-
       draw()
     })
     
@@ -167,7 +170,16 @@ export const Leinwald = (options: LeinwaldOptions) => {
     })
   })
 
-  mouseWheelEvents
+  mouseWheelEvents.subscribe((event) => {
+    const { deltaY } = event;
+
+    const delta = deltaY * scrollSpeed;
+
+    viewportTransform.scaleX += delta;
+    viewportTransform.scaleY += delta;
+
+    draw()
+  })
 
   return {
     destroy: () => {

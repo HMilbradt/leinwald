@@ -14,4 +14,8 @@ At it's core, LeinWald is built around function programming paradigms.  This ens
 
 - Canvas
 - SceneManager
-- 
+- Utils
+
+The Canvas is responsible for drawing graphics.  It is a wrapper around the HTML5 Canvas element, and provides a simple API for drawing shapes, lines, and text.  The Canvas also provides a simple API for loading images, and drawing them to the canvas.
+
+On top of the Canvas, we have the SceneManager.  It's duty is to manage "scenes", which are data objects that contain all information needed to render a Scene.

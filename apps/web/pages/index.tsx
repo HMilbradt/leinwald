@@ -21,7 +21,7 @@ export default function Web() {
     <div>
       <h1>Web</h1>
 
-      <div style={{ 'border': '2px black solid', width: 1000, height: 1000 }} ref={windowRef}></div>
+      <div style={{ 'border': '2px black solid', width: 500, height: 500 }} ref={windowRef}></div>
 
       <Button />
     </div>
