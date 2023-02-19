@@ -24,7 +24,6 @@ export const Leinwald = (options: LeinwaldOptions) => {
 
   const context = canvas.getContext('2d');
 
-
   const mouseMoveEvents = new Observable<MouseEvent>((observer) => {
     canvas.addEventListener('mousemove', (event) => {
       observer.next(event);
@@ -92,7 +91,8 @@ export const Leinwald = (options: LeinwaldOptions) => {
   const viewportTransform = {
     x: 0,
     y: 0,
-    scale: 1,
+    scaleX: 1,
+    scaleY: 1,
   }
 
   const scrollSpeed = 0.1;
@@ -101,6 +101,13 @@ export const Leinwald = (options: LeinwaldOptions) => {
     {
       x: 100,
       y: 100,
+      width: 100,
+      height: 100,
+      type: 'rect'
+    },
+    {
+      x: 400,
+      y: 300,
       width: 100,
       height: 100,
       type: 'rect'
@@ -118,8 +125,8 @@ export const Leinwald = (options: LeinwaldOptions) => {
     elements.forEach((element) => {
       const { x, y, width, height } = element;
 
-      const viewportX = x * viewportTransform.scale - width / 2;
-      const viewportY = y * viewportTransform.scale;
+      const viewportX = element.x + viewportTransform.x
+      const viewportY = element.y + viewportTransform.y
 
       if (element.type === 'rect') {
         context.fillRect(viewportX, viewportY, element.width, element.height);
@@ -132,23 +139,35 @@ export const Leinwald = (options: LeinwaldOptions) => {
   draw()
 
   const mouseDown = mouseDownEvents.subscribe((event) => {
+    let lastOffsetX = event.offsetX;
+    let lastOffsetY = event.offsetY;
+
     const mouseMove = mouseMoveEvents.subscribe((event) => {
-      const { offsetX: newOffsetX, offsetY: newOffsetY } = event;
+      const { offsetX, offsetY } = event
 
-      const viewportX = (newOffsetX - viewportTransform.x) / viewportTransform.scale;
-      const viewportY = (newOffsetY - viewportTransform.y) / viewportTransform.scale;
+      const differenceX = lastOffsetX - offsetX;
+      const differenceY = lastOffsetY - offsetY;
 
-      viewportTransform.x += viewportX
-      viewportTransform.y += viewportY
+      lastOffsetX = offsetX;
+      lastOffsetY = offsetY;
+
+      viewportTransform.x += differenceX;
+      viewportTransform.y += differenceY;
+
+      console.log(viewportTransform)
 
       draw()
     })
-
+    
+    draw()
+    
     const mouseUp = mouseUpEvents.subscribe((event) => {
       mouseMove.unsubscribe();
       mouseUp.unsubscribe();
     })
   })
+
+  mouseWheelEvents
 
   return {
     destroy: () => {

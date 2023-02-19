@@ -13,5 +13,5 @@ At it's core, LeinWald is built around function programming paradigms.  This ens
 # Core Concepts
 
 - Canvas
-- Event Bus
-- Scene Manager
+- SceneManager
+- 
