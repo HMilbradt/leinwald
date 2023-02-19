@@ -1,7 +1,8 @@
 import { Observable } from 'rxjs';
 import { LeinwaldCanvas } from './core/canvas';
-
-const ZOOM_SPEED = 0.1;
+import { LeinwaldRenderer } from './core/renderer';
+import { LeinwaldElement, LeinwaldElementType, LeinwaldScene } from './types';
+import { hitTest } from './utils/hit';
 
 export interface LeinwaldOptions {
   element: HTMLElement | string;
@@ -86,10 +87,6 @@ export const Leinwald = (options: LeinwaldOptions) => {
     });
   })
 
-  //
-  // Let's try panning the canvas
-  //
-
   const viewportTransform = {
     x: 0,
     y: 0,
@@ -97,89 +94,73 @@ export const Leinwald = (options: LeinwaldOptions) => {
     scaleY: 1,
   }
 
-  const scrollSpeed = 0.01;
+  const elements: LeinwaldElement[] = [{
+    id: 'rect-1',
+    type: LeinwaldElementType.Rect,
+    x: 100,
+    y: 100,
+    width: 100,
+    height: 100,
+    scaleX: 1,
+    scaleY: 1,
+  }]
 
-  const elements = [
-    {
-      x: 100,
-      y: 100,
-      width: 100,
-      height: 100,
-      type: 'rect'
-    },
-    {
-      x: 400,
-      y: 300,
-      width: 100,
-      height: 100,
-      type: 'rect'
-    }
-  ]
-
-  const draw = () => {
-    if (!context) return
-
-    context.clearRect(0, 0, width, height);
-
-    context.save();
-    context.translate(viewportTransform.x, viewportTransform.y);
-
-    elements.forEach((element) => {
-      const { x, y, width, height } = element;
-
-      const viewportX = (x + viewportTransform.x) * viewportTransform.scaleX;
-      const viewportY = (y + viewportTransform.y) * viewportTransform.scaleY;
-
-      const viewportWidth = width * viewportTransform.scaleX;
-      const viewportHeight = height * viewportTransform.scaleY;
-
-      if (element.type === 'rect') {
-        context.fillRect(viewportX, viewportY, viewportWidth, viewportHeight);
-      }
-    })
-
-    context.restore();
+  const scene: LeinwaldScene = {
+    elements,
+    viewportTransform,
+    selectedElements: [],
   }
 
-  draw()
+  mouseDownEvents.subscribe((event) => {
 
-  const mouseDown = mouseDownEvents.subscribe((event) => {
-    let lastOffsetX = event.offsetX;
-    let lastOffsetY = event.offsetY;
+    const hit = hitTest(scene.elements, event, viewportTransform);
+
+    if (hit) {
+      scene.selectedElements = [hit];
+      LeinwaldRenderer(context!, scene)
+      return
+    } else {
+      scene.selectedElements = [];
+    }
+
+    const initialDragX = event.offsetX;
+    const initialDragY = event.offsetY;
+
+    const initialViewportTransformX = viewportTransform.x;
+    const initialViewportTransformY = viewportTransform.y;
 
     const mouseMove = mouseMoveEvents.subscribe((event) => {
       const { offsetX, offsetY } = event
 
-      const differenceX = lastOffsetX - offsetX;
-      const differenceY = lastOffsetY - offsetY;
+      const differenceX = initialDragX - offsetX;
+      const differenceY = initialDragY - offsetY;
 
-      lastOffsetX = offsetX;
-      lastOffsetY = offsetY;
+      viewportTransform.x = initialViewportTransformX - differenceX;
+      viewportTransform.y = initialViewportTransformY - differenceY;
 
-      viewportTransform.x += differenceX;
-      viewportTransform.y += differenceY;
-
-      draw()
+      LeinwaldRenderer(context!, scene)
     })
-    
-    draw()
-    
+
     const mouseUp = mouseUpEvents.subscribe((event) => {
       mouseMove.unsubscribe();
       mouseUp.unsubscribe();
     })
+
+    LeinwaldRenderer(context!, scene)
   })
 
   mouseWheelEvents.subscribe((event) => {
     const { deltaY } = event;
 
-    const delta = deltaY * scrollSpeed;
+    const delta = deltaY > 0 ? 0.1 : -0.1;
 
-    viewportTransform.scaleX += delta;
-    viewportTransform.scaleY += delta;
+    viewportTransform.scaleX = Math.max(viewportTransform.scaleX - delta, 0.1);
+    viewportTransform.scaleY = Math.max(viewportTransform.scaleY - delta, 0.1);
 
-    draw()
+    LeinwaldRenderer(context!, scene)
   })
+
+  LeinwaldRenderer(context!, scene)
 
   return {
     destroy: () => {
