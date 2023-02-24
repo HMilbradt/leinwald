@@ -24,6 +24,10 @@ export interface LeinwaldElement {
 }
 
 export interface LeinwaldScene {
+  origin: {
+    x: number;
+    y: number;
+  }
   elements: LeinwaldElement[];
   viewportTransform: ViewportTransform;
   selectedElements: LeinwaldElement[];

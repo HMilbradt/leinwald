@@ -2,49 +2,42 @@ import { LeinwaldElement, LeinwaldScene, ViewportTransform } from "../types";
 
 const renderRect = (context: CanvasRenderingContext2D, element: LeinwaldElement, viewportTransform: ViewportTransform) => {
   const { x, y, width, height } = element;
-  const { scaleX, scaleY } = viewportTransform;
 
-  console.log(viewportTransform)
-
-  context.fillRect(x * scaleX, y * scaleY, width * scaleX, height * scaleY);
+  context.fillRect(x, y, width, height);
 }
 
-const renderSelection = (context: CanvasRenderingContext2D, elements: LeinwaldElement[], viewportTransform: ViewportTransform) => {
-  const { scaleX, scaleY } = viewportTransform;
-
-  elements.forEach((element) => {
-    const { x, y, width, height } = element;
-
-    context.save();
-
-    context.strokeStyle = 'red';
-    context.lineWidth = 2;
-
-    context.strokeRect(x * scaleX - 10, y * scaleY - 10, width * scaleX + 20, height * scaleY + 20);
-
-    context.restore();
-  })
-}
 
 export const LeinwaldRenderer = (context: CanvasRenderingContext2D, scene: LeinwaldScene) => {
   const { canvas } = context;
   const { width, height } = canvas;
+  const { elements, viewportTransform } = scene;
 
-  const { elements, viewportTransform, selectedElements } = scene;
+  context.setTransform(viewportTransform.scaleX, 0, 0, viewportTransform.scaleY, viewportTransform.x, viewportTransform.y);
+  context.clearRect(-viewportTransform.x, -viewportTransform.y, context.canvas.width, context.canvas.height);
 
-  context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+  const gridStep = 20;
 
-  context.save();
+  const gridWidth = -viewportTransform.x + width + gridStep;
+  const gridHeight = -viewportTransform.y + height + gridStep;
 
-  context.translate(viewportTransform.x, viewportTransform.y);
+  const offsetX = -viewportTransform.x % gridStep;
+  const offsetY = -viewportTransform.y % gridStep;
+  const startX = -viewportTransform.x - gridStep - offsetX;
+  const startY = -viewportTransform.y - gridStep - offsetY;
+
+  for (let i = startX; i < gridWidth; i += gridStep) {
+    for (let j = startY; j < gridHeight; j += gridStep) {
+      context.beginPath();
+      context.arc(i, j, 1, 0, 2 * Math.PI);
+      context.fill();
+    }
+  }
 
   elements.forEach((element) => {
     if (element.type === 'rect') {
       renderRect(context, element, viewportTransform);
     }
   })
-
-  renderSelection(context, selectedElements, viewportTransform);
 
   context.restore();
 }

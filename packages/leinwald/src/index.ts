@@ -1,4 +1,4 @@
-import { Observable } from 'rxjs';
+import { Observable, throttle, throttleTime } from 'rxjs';
 import { LeinwaldCanvas } from './core/canvas';
 import { LeinwaldRenderer } from './core/renderer';
 import { LeinwaldElement, LeinwaldElementType, LeinwaldScene } from './types';
@@ -109,34 +109,29 @@ export const Leinwald = (options: LeinwaldOptions) => {
     elements,
     viewportTransform,
     selectedElements: [],
+    origin: {
+      x: 0,
+      y: 0,
+    }
   }
 
   mouseDownEvents.subscribe((event) => {
+    const dragSpeed = 1;
 
-    const hit = hitTest(scene.elements, event, viewportTransform);
-
-    if (hit) {
-      scene.selectedElements = [hit];
-      LeinwaldRenderer(context!, scene)
-      return
-    } else {
-      scene.selectedElements = [];
-    }
-
-    const initialDragX = event.offsetX;
-    const initialDragY = event.offsetY;
+    const initialDragX = event.clientX;
+    const initialDragY = event.clientY;
 
     const initialViewportTransformX = viewportTransform.x;
     const initialViewportTransformY = viewportTransform.y;
 
-    const mouseMove = mouseMoveEvents.subscribe((event) => {
-      const { offsetX, offsetY } = event
+    const mouseMove = mouseMoveEvents.pipe(throttleTime(5)).subscribe((event) => {
+      const { clientX, clientY } = event
 
-      const differenceX = initialDragX - offsetX;
-      const differenceY = initialDragY - offsetY;
+      const differenceX = initialDragX - clientX;
+      const differenceY = initialDragY - clientY;
 
-      viewportTransform.x = initialViewportTransformX - differenceX;
-      viewportTransform.y = initialViewportTransformY - differenceY;
+      viewportTransform.x = initialViewportTransformX - differenceX * dragSpeed;
+      viewportTransform.y = initialViewportTransformY - differenceY * dragSpeed;
 
       LeinwaldRenderer(context!, scene)
     })
@@ -154,8 +149,25 @@ export const Leinwald = (options: LeinwaldOptions) => {
 
     const delta = deltaY > 0 ? 0.1 : -0.1;
 
+    const originX = event.clientX;
+    const originY = event.clientY;
+
+    // Zoom to point
     viewportTransform.scaleX = Math.max(viewportTransform.scaleX - delta, 0.1);
     viewportTransform.scaleY = Math.max(viewportTransform.scaleY - delta, 0.1);
+
+    const distanceX = originX - viewportTransform.x;
+    const distanceY = originY - viewportTransform.y;
+
+    const newDistanceX = distanceX * viewportTransform.scaleX;
+    const newDistanceY = distanceY * viewportTransform.scaleY;
+
+    const differenceX = newDistanceX - distanceX;
+    const differenceY = newDistanceY - distanceY;
+
+    viewportTransform.x = viewportTransform.x - differenceX;
+    viewportTransform.y = viewportTransform.y - differenceY;
+
 
     LeinwaldRenderer(context!, scene)
   })
