@@ -47,7 +47,9 @@ function renderPointer(context: CanvasRenderingContext2D, element: LeinwaldPoint
 export const LeinwaldRenderer = (context: CanvasRenderingContext2D, scene: LeinwaldScene) => {
   const { canvas } = context;
   const { width, height } = canvas;
-  const { elements, viewportTransform, selectedElements } = scene;
+  const { elements, viewportTransform, selectedElements, hoveredElements } = scene;
+
+  const renderStart = performance.now();
 
   context.setTransform(1, 0, 0, 1, 0, 0);
   context.clearRect(0, 0, width, height);
@@ -83,6 +85,34 @@ export const LeinwaldRenderer = (context: CanvasRenderingContext2D, scene: Leinw
     }
   })
 
+  hoveredElements.forEach((element) => {
+    if (selectedElements.includes(element)) {
+      return;
+    }
+
+    let { x, y } = element;
+
+
+    let width: number = 0
+    let height: number = 0
+    if (element.type === 'rect') {
+      width = (element as LeinwaldRect).width;
+      height = (element as LeinwaldRect).height;
+    } else if (element.type === 'pointer') {
+      width = (element as LeinwaldPointer).width;
+      height = (element as LeinwaldPointer).height;
+    } else if (element.type === LeinwaldElementType.Circle) {
+      x = (element as LeinwaldCircle).x - (element as LeinwaldCircle).radius;
+      y = (element as LeinwaldCircle).y - (element as LeinwaldCircle).radius;
+      width = (element as LeinwaldCircle).radius * 2;
+      height = (element as LeinwaldCircle).radius * 2;
+    }
+
+    context.strokeStyle = '#ababab';
+    context.lineWidth = 1;
+    context.strokeRect(x - 10, y - 10, width + 20, height + 20);
+  })
+
   selectedElements.forEach((element) => {
     let { x, y } = element;
 
@@ -103,6 +133,12 @@ export const LeinwaldRenderer = (context: CanvasRenderingContext2D, scene: Leinw
 
     context.strokeStyle = 'black';
     context.lineWidth = 1;
-    context.strokeRect(x, y, width, height);
+    context.strokeRect(x - 10, y - 10, width + 20, height + 20);
   })
+
+  const renderEnd = performance.now();
+
+  context.setTransform(1, 0, 0, 1, 0, 0);
+  context.font = "16px arial";
+  context.fillText("Render time: " + (renderEnd - renderStart).toFixed(2) + "ms", 10, 40);
 }

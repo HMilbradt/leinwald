@@ -148,6 +148,7 @@ export const Leinwald = (options: LeinwaldOptions) => {
     elements,
     viewportTransform,
     selectedElements: [],
+    hoveredElements: [],
   }
 
   mouseMoveEvents.subscribe((event) => {
@@ -160,8 +161,11 @@ export const Leinwald = (options: LeinwaldOptions) => {
 
     if (hit) {
       canvas.style.cursor = 'pointer';
+      scene.hoveredElements = [hit];
+
     } else {
       canvas.style.cursor = 'default';
+      scene.hoveredElements = [];
     }
 
     LeinwaldRenderer(context!, scene)
@@ -179,12 +183,11 @@ export const Leinwald = (options: LeinwaldOptions) => {
     let initialElementTransformX = 0;
     let initialElementTransformY = 0;
 
-    const hit = hitTest(event, scene);
-
-    if (hit) {
-      scene.selectedElements = [hit];
-      initialElementTransformX = hit.x
-      initialElementTransformY = hit.y;
+    if (scene.hoveredElements.length > 0) {
+      const selectedElement = scene.hoveredElements[0];
+      initialElementTransformX = selectedElement.x
+      initialElementTransformY = selectedElement.y;
+      scene.selectedElements = [selectedElement];
     } else {
       scene.selectedElements = [];
     }
@@ -198,8 +201,9 @@ export const Leinwald = (options: LeinwaldOptions) => {
       if (scene.selectedElements.length > 0) {
         const selectedElement = scene.selectedElements[0];
 
-        selectedElement.x = initialElementTransformX - differenceX * dragSpeed;
-        selectedElement.y = initialElementTransformY - differenceY * dragSpeed;
+        selectedElement.x = initialElementTransformX - (differenceX / viewportTransform.scaleX);
+        selectedElement.y = initialElementTransformY - (differenceY / viewportTransform.scaleY);
+
       } else {
         viewportTransform.x = initialViewportTransformX - differenceX * dragSpeed;
         viewportTransform.y = initialViewportTransformY - differenceY * dragSpeed;

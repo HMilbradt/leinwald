@@ -50,6 +50,7 @@ export interface LeinwaldScene {
   elements: LeinwaldElement[];
   viewportTransform: ViewportTransform;
   selectedElements: LeinwaldElement[];
+  hoveredElements: LeinwaldElement[];
 }
 
 export interface Point {
