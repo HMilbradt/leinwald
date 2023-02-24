@@ -1,4 +1,3 @@
-import { Button } from "ui";
 import { Leinwald } from 'leinwald'
 import React, { useEffect } from "react";
 
@@ -18,12 +17,6 @@ export default function Web() {
   }, [])
 
   return (
-    <div>
-      <h1>Web</h1>
-
-      <div style={{ 'border': '2px black solid', width: 1000, height: 1000 }} ref={windowRef}></div>
-
-      <Button />
-    </div>
+    <div style={{ width: '100vw', height: '100vh' }} ref={windowRef}></div>
   );
 }

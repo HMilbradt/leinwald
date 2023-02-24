@@ -1,8 +1,8 @@
-import { Observable, throttle, throttleTime } from 'rxjs';
+import { Observable } from 'rxjs';
 import { LeinwaldCanvas } from './core/canvas';
 import { LeinwaldRenderer } from './core/renderer';
-import { LeinwaldElement, LeinwaldElementType, LeinwaldScene } from './types';
-import { hitTest } from './utils/hit';
+import { LeinwaldCircle, LeinwaldElement, LeinwaldElementType, LeinwaldPointer, LeinwaldRect, LeinwaldScene } from './types';
+import { hitTest, toWorldCoordinates } from './utils';
 
 export interface LeinwaldOptions {
   element: HTMLElement | string;
@@ -94,26 +94,78 @@ export const Leinwald = (options: LeinwaldOptions) => {
     scaleY: 1,
   }
 
-  const elements: LeinwaldElement[] = [{
-    id: 'rect-1',
-    type: LeinwaldElementType.Rect,
-    x: 100,
-    y: 100,
-    width: 100,
-    height: 100,
+  const pointer: LeinwaldPointer = {
+    id: 'pointer',
+    type: LeinwaldElementType.Pointer,
+    x: 0,
+    y: 0,
+    width: 0,
+    height: 0,
     scaleX: 1,
     scaleY: 1,
-  }]
+    fill: 'black',
+    stroke: 'transparent',
+  }
+
+  const elements: LeinwaldElement[] = [
+    {
+      id: 'rect-1',
+      type: LeinwaldElementType.Rect,
+      x: 100,
+      y: 100,
+      width: 100,
+      height: 100,
+      scaleX: 1,
+      scaleY: 1,
+      fill: 'red',
+    } as LeinwaldRect,
+    {
+
+      id: 'rect-2',
+      type: LeinwaldElementType.Rect,
+      x: 200,
+      y: 200,
+      width: 100,
+      height: 100,
+      scaleX: 1,
+      scaleY: 1,
+      fill: 'blue',
+    } as LeinwaldRect,
+    {
+      id: 'circle-1',
+      type: LeinwaldElementType.Circle,
+      x: 350,
+      y: 350,
+      radius: 50,
+      scaleX: 1,
+      scaleY: 1,
+      fill: 'green',
+    } as LeinwaldCircle,
+    pointer
+  ]
 
   const scene: LeinwaldScene = {
     elements,
     viewportTransform,
     selectedElements: [],
-    origin: {
-      x: 0,
-      y: 0,
-    }
   }
+
+  mouseMoveEvents.subscribe((event) => {
+    const { clientX, clientY } = event;
+
+    pointer.x = (clientX - viewportTransform.x) / viewportTransform.scaleX;
+    pointer.y = (clientY - viewportTransform.y) / viewportTransform.scaleY;
+
+    const hit = hitTest(event, scene);
+
+    if (hit) {
+      canvas.style.cursor = 'pointer';
+    } else {
+      canvas.style.cursor = 'default';
+    }
+
+    LeinwaldRenderer(context!, scene)
+  })
 
   mouseDownEvents.subscribe((event) => {
     const dragSpeed = 1;
@@ -124,16 +176,34 @@ export const Leinwald = (options: LeinwaldOptions) => {
     const initialViewportTransformX = viewportTransform.x;
     const initialViewportTransformY = viewportTransform.y;
 
-    const mouseMove = mouseMoveEvents.pipe(throttleTime(5)).subscribe((event) => {
+    let initialElementTransformX = 0;
+    let initialElementTransformY = 0;
+
+    const hit = hitTest(event, scene);
+
+    if (hit) {
+      scene.selectedElements = [hit];
+      initialElementTransformX = hit.x
+      initialElementTransformY = hit.y;
+    } else {
+      scene.selectedElements = [];
+    }
+    
+    const mouseMove = mouseMoveEvents.subscribe((event) => {
       const { clientX, clientY } = event
 
       const differenceX = initialDragX - clientX;
       const differenceY = initialDragY - clientY;
 
-      viewportTransform.x = initialViewportTransformX - differenceX * dragSpeed;
-      viewportTransform.y = initialViewportTransformY - differenceY * dragSpeed;
+      if (scene.selectedElements.length > 0) {
+        const selectedElement = scene.selectedElements[0];
 
-      LeinwaldRenderer(context!, scene)
+        selectedElement.x = initialElementTransformX - differenceX * dragSpeed;
+        selectedElement.y = initialElementTransformY - differenceY * dragSpeed;
+      } else {
+        viewportTransform.x = initialViewportTransformX - differenceX * dragSpeed;
+        viewportTransform.y = initialViewportTransformY - differenceY * dragSpeed;
+      }
     })
 
     const mouseUp = mouseUpEvents.subscribe((event) => {
@@ -145,29 +215,27 @@ export const Leinwald = (options: LeinwaldOptions) => {
   })
 
   mouseWheelEvents.subscribe((event) => {
-    const { deltaY } = event;
+    const { deltaY, clientX, clientY } = event;
 
-    const delta = deltaY > 0 ? 0.1 : -0.1;
+    const delta = deltaY > 0 ? 0.01 : -0.01;
 
-    const originX = event.clientX;
-    const originY = event.clientY;
+    const oldScaleX = viewportTransform.scaleX;
+    const oldScaleY = viewportTransform.scaleY;
 
-    // Zoom to point
     viewportTransform.scaleX = Math.max(viewportTransform.scaleX - delta, 0.1);
     viewportTransform.scaleY = Math.max(viewportTransform.scaleY - delta, 0.1);
 
-    const distanceX = originX - viewportTransform.x;
-    const distanceY = originY - viewportTransform.y;
+    const newScaleX = viewportTransform.scaleX;
+    const newScaleY = viewportTransform.scaleY;
 
-    const newDistanceX = distanceX * viewportTransform.scaleX;
-    const newDistanceY = distanceY * viewportTransform.scaleY;
+    const oldViewportX = viewportTransform.x;
+    const oldViewportY = viewportTransform.y;
 
-    const differenceX = newDistanceX - distanceX;
-    const differenceY = newDistanceY - distanceY;
+    const newViewportX = clientX - (clientX - oldViewportX) * (newScaleX / oldScaleX);
+    const newViewportY = clientY - (clientY - oldViewportY) * (newScaleY / oldScaleY);
 
-    viewportTransform.x = viewportTransform.x - differenceX;
-    viewportTransform.y = viewportTransform.y - differenceY;
-
+    viewportTransform.x = newViewportX;
+    viewportTransform.y = newViewportY;
 
     LeinwaldRenderer(context!, scene)
   })
