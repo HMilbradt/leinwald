@@ -1,7 +1,28 @@
-import { LeinwaldCircle, LeinwaldElement, LeinwaldElementType, LeinwaldPointer, LeinwaldRect, LeinwaldScene, ViewportTransform } from "../types";
+import { LeinwaldCircle, LeinwaldElementType, LeinwaldImage, LeinwaldPointer, LeinwaldRect, LeinwaldScene, LeinwaldText, ViewportTransform } from "../types";
+import { calculateTextBoundingBox } from "../utils";
 
 const BACKGROUND_CIRCLE_RADIUS = 1.5;
 const BACKGROUND_CIRCLE_COLOR = '#ababab';
+
+const renderImage = (context: CanvasRenderingContext2D, element: LeinwaldImage) => {
+  const { x, y, width, height, image } = element;
+
+  context.drawImage(image, 0, 0, image.width, image.height, x, y, width, height);
+}
+
+const renderText = (context: CanvasRenderingContext2D, element: LeinwaldText) => {
+  const { x, y, text, fontFace, fontSize, textAlign, textBaseline } = element;
+
+  context.font = `${fontSize}px ${fontFace}`;
+  context.textAlign = textAlign || 'left';
+  context.textBaseline = textBaseline || 'top';
+
+  context.fillStyle = element.fill || 'transparent';
+  context.strokeStyle = element.stroke || 'transparent';
+
+  context.fillText(text, x, y);
+  context.strokeText(text, x, y);
+}
 
 const renderRect = (context: CanvasRenderingContext2D, element: LeinwaldRect) => {
   const { x, y, width, height } = element;
@@ -82,6 +103,10 @@ export const LeinwaldRenderer = (context: CanvasRenderingContext2D, scene: Leinw
       renderPointer(context, element as LeinwaldPointer);
     } else if (element.type === LeinwaldElementType.Circle) {
       renderCircle(context, element as LeinwaldCircle);
+    } else if (element.type === LeinwaldElementType.Image) {
+      renderImage(context, element as LeinwaldImage);
+    } else if (element.type === LeinwaldElementType.Text) {
+      renderText(context, element as LeinwaldText);
     }
   })
 
@@ -91,7 +116,6 @@ export const LeinwaldRenderer = (context: CanvasRenderingContext2D, scene: Leinw
     }
 
     let { x, y } = element;
-
 
     let width: number = 0
     let height: number = 0
@@ -106,6 +130,13 @@ export const LeinwaldRenderer = (context: CanvasRenderingContext2D, scene: Leinw
       y = (element as LeinwaldCircle).y - (element as LeinwaldCircle).radius;
       width = (element as LeinwaldCircle).radius * 2;
       height = (element as LeinwaldCircle).radius * 2;
+    } else if (element.type === LeinwaldElementType.Image) {
+      width = (element as LeinwaldImage).width;
+      height = (element as LeinwaldImage).height;
+    } else if (element.type === LeinwaldElementType.Text) {
+      const boundingBox = calculateTextBoundingBox(element as LeinwaldText, context);
+      width = boundingBox.width;
+      height = boundingBox.height;
     }
 
     context.strokeStyle = '#ababab';
@@ -129,6 +160,14 @@ export const LeinwaldRenderer = (context: CanvasRenderingContext2D, scene: Leinw
       y = (element as LeinwaldCircle).y - (element as LeinwaldCircle).radius;
       width = (element as LeinwaldCircle).radius * 2;
       height = (element as LeinwaldCircle).radius * 2;
+    } else if (element.type === LeinwaldElementType.Image) {
+      width = (element as LeinwaldImage).width;
+      height = (element as LeinwaldImage).height;
+    } else if (element.type === LeinwaldElementType.Text) {
+      const boundingBox = calculateTextBoundingBox(element as LeinwaldText, context);
+
+      width = boundingBox.width;
+      height = boundingBox.height;
     }
 
     context.strokeStyle = 'black';

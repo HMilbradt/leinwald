@@ -10,6 +10,8 @@ export enum LeinwaldElementType {
   Circle = 'circle',
   Text = 'text',
   Pointer = 'pointer',
+  Interaction = 'interaction',
+  Image = 'image',
 }
 
 export interface LeinwaldElement {
@@ -21,7 +23,6 @@ export interface LeinwaldElement {
   scaleY?: number;
   fill?: string;
   stroke?: string;
-  interactive?: boolean;
 }
 
 export interface LeinwaldRect extends LeinwaldElement {
@@ -35,15 +36,26 @@ export interface LeinwaldCircle extends LeinwaldElement {
   radius: number;
 }
 
-export interface LeinwaldText extends LeinwaldElement {
-  type: LeinwaldElementType.Text;
-  text: string;
-}
-
 export interface LeinwaldPointer extends LeinwaldElement {
   type: LeinwaldElementType.Pointer;
   width: number;
   height: number;
+}
+
+export interface LeinwaldImage extends LeinwaldElement {
+  type: LeinwaldElementType.Image;
+  width: number;
+  height: number;
+  image: HTMLImageElement;
+}
+
+export interface LeinwaldText extends LeinwaldElement {
+  type: LeinwaldElementType.Text;
+  text: string;
+  fontFace?: string;
+  fontSize: number;
+  textAlign?: CanvasTextAlign;
+  textBaseline?: CanvasTextBaseline;
 }
 
 export interface LeinwaldScene {
@@ -52,6 +64,7 @@ export interface LeinwaldScene {
   selectedElements: LeinwaldElement[];
   hoveredElements: LeinwaldElement[];
 }
+
 
 export interface Point {
   x: number;
@@ -63,6 +76,8 @@ export interface BoundingBox {
   y1: number;
   x2: number;
   y2: number;
+  width: number;
+  height: number;
 }
 
 export interface Circle {

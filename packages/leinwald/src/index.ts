@@ -1,8 +1,8 @@
 import { Observable } from 'rxjs';
 import { LeinwaldCanvas } from './core/canvas';
 import { LeinwaldRenderer } from './core/renderer';
-import { LeinwaldCircle, LeinwaldElement, LeinwaldElementType, LeinwaldPointer, LeinwaldRect, LeinwaldScene } from './types';
-import { hitTest, toWorldCoordinates } from './utils';
+import { LeinwaldCircle, LeinwaldElement, LeinwaldElementType, LeinwaldImage, LeinwaldRect, LeinwaldScene, LeinwaldText } from './types';
+import { hitTest } from './utils';
 
 export interface LeinwaldOptions {
   element: HTMLElement | string;
@@ -18,12 +18,18 @@ export const Leinwald = (options: LeinwaldOptions) => {
     throw new Error('Error: missing required option "element"');
   }
 
+  const resize = () => {
+    canvas.width = htmlElement.clientWidth;
+    canvas.height = htmlElement.clientHeight;
+  }
+
   const width = htmlElement.clientWidth;
   const height = htmlElement.clientHeight;
 
   const canvas = LeinwaldCanvas({ id: canvas_id, width, height });
 
   htmlElement.appendChild(canvas);
+  htmlElement.addEventListener('resize', resize)
 
   const context = canvas.getContext('2d');
 
@@ -94,19 +100,6 @@ export const Leinwald = (options: LeinwaldOptions) => {
     scaleY: 1,
   }
 
-  const pointer: LeinwaldPointer = {
-    id: 'pointer',
-    type: LeinwaldElementType.Pointer,
-    x: 0,
-    y: 0,
-    width: 0,
-    height: 0,
-    scaleX: 1,
-    scaleY: 1,
-    fill: 'black',
-    stroke: 'transparent',
-  }
-
   const elements: LeinwaldElement[] = [
     {
       id: 'rect-1',
@@ -141,7 +134,17 @@ export const Leinwald = (options: LeinwaldOptions) => {
       scaleY: 1,
       fill: 'green',
     } as LeinwaldCircle,
-    pointer
+    {
+      id: 'text-1',
+      type: LeinwaldElementType.Text,
+      x: 100,
+      y: 100,
+      text: 'Hello World',
+      fontSize: 20,
+      scaleX: 1,
+      scaleY: 1,
+      fill: 'black',
+    } as LeinwaldText,
   ]
 
   const scene: LeinwaldScene = {
@@ -152,17 +155,11 @@ export const Leinwald = (options: LeinwaldOptions) => {
   }
 
   mouseMoveEvents.subscribe((event) => {
-    const { clientX, clientY } = event;
-
-    pointer.x = (clientX - viewportTransform.x) / viewportTransform.scaleX;
-    pointer.y = (clientY - viewportTransform.y) / viewportTransform.scaleY;
-
-    const hit = hitTest(event, scene);
+    const hit = hitTest(event, scene, context!);
 
     if (hit) {
       canvas.style.cursor = 'pointer';
       scene.hoveredElements = [hit];
-
     } else {
       canvas.style.cursor = 'default';
       scene.hoveredElements = [];
@@ -184,6 +181,7 @@ export const Leinwald = (options: LeinwaldOptions) => {
     let initialElementTransformY = 0;
 
     if (scene.hoveredElements.length > 0) {
+
       const selectedElement = scene.hoveredElements[0];
       initialElementTransformX = selectedElement.x
       initialElementTransformY = selectedElement.y;
@@ -191,7 +189,7 @@ export const Leinwald = (options: LeinwaldOptions) => {
     } else {
       scene.selectedElements = [];
     }
-    
+
     const mouseMove = mouseMoveEvents.subscribe((event) => {
       const { clientX, clientY } = event
 
@@ -203,7 +201,6 @@ export const Leinwald = (options: LeinwaldOptions) => {
 
         selectedElement.x = initialElementTransformX - (differenceX / viewportTransform.scaleX);
         selectedElement.y = initialElementTransformY - (differenceY / viewportTransform.scaleY);
-
       } else {
         viewportTransform.x = initialViewportTransformX - differenceX * dragSpeed;
         viewportTransform.y = initialViewportTransformY - differenceY * dragSpeed;
@@ -247,6 +244,23 @@ export const Leinwald = (options: LeinwaldOptions) => {
   LeinwaldRenderer(context!, scene)
 
   return {
+    addImage: (image: HTMLImageElement) => {
+
+      const element: LeinwaldImage = {
+        id: 'image-1',
+        type: LeinwaldElementType.Image,
+        x: 100,
+        y: 100,
+        width: 100,
+        height: 100,
+        scaleX: 1,
+        scaleY: 1,
+        image,
+      }
+
+      scene.elements.push(element);
+      LeinwaldRenderer(context!, scene)
+    },
     destroy: () => {
       htmlElement.removeChild(canvas);
     }
