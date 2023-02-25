@@ -1,5 +1,4 @@
-import { LeinwaldCircle, LeinwaldElementType, LeinwaldImage, LeinwaldPointer, LeinwaldRect, LeinwaldScene, LeinwaldText, ViewportTransform } from "../types";
-import { calculateTextBoundingBox } from "../utils";
+import { LeinwaldCircle, LeinwaldElementType, LeinwaldImage, LeinwaldRect, LeinwaldScene, LeinwaldText, ViewportTransform } from "../types";
 
 const BACKGROUND_CIRCLE_RADIUS = 1.5;
 const BACKGROUND_CIRCLE_COLOR = '#ababab';
@@ -30,8 +29,20 @@ const renderRect = (context: CanvasRenderingContext2D, element: LeinwaldRect) =>
   context.fillStyle = element.fill || 'transparent';
   context.strokeStyle = element.stroke || 'transparent';
 
+  if (element.rotation !== 0) {
+    context.translate(x + width / 2, y + height / 2);
+    context.rotate(element.rotation * Math.PI / 180);
+    context.translate(-(x + width / 2), -(y + height / 2));
+  }
+
   context.fillRect(x, y, width, height);
   context.strokeRect(x, y, width, height);
+
+  if (element.rotation !== 0) {
+    context.translate(x + width / 2, y + height / 2);
+    context.rotate(-element.rotation * Math.PI / 180);
+    context.translate(-(x + width / 2), -(y + height / 2));
+  }
 }
 
 const renderCircle = (context: CanvasRenderingContext2D, element: LeinwaldCircle) => {
@@ -46,29 +57,34 @@ const renderCircle = (context: CanvasRenderingContext2D, element: LeinwaldCircle
   context.stroke();
 }
 
-function renderPointer(context: CanvasRenderingContext2D, element: LeinwaldPointer) {
-  const { x, y } = element;
-  const size = 10
+const renderDebugPanel = (context: CanvasRenderingContext2D, scene: LeinwaldScene, renderTime: number) => {
 
-  context.lineWidth = 1;
-  context.strokeStyle = "black";
-  context.beginPath();
-  context.lineTo(x - size, y);
-  context.lineTo(x + size, y);
-  context.moveTo(x, y - size);
-  context.lineTo(x, y + size);
-  context.save()
   context.setTransform(1, 0, 0, 1, 0, 0);
-  context.stroke();
   context.font = "16px arial";
-  context.fillText("Pointer X: " + x.toFixed(2) + "  Y: " + y.toFixed(2), 10, 20);
-  context.restore();
+  context.fillText("Render time: " + (renderTime).toFixed(2) + "ms", 10, 40);
+
+  const { elements, viewportTransform, selectedElements } = scene;
+
+  const { x, y, scaleX, scaleY } = viewportTransform;
+
+  context.fillText("Viewport: " + x.toFixed(2) + ", " + y.toFixed(2) + ", " + scaleX.toFixed(2) + ", " + scaleY.toFixed(2), 10, 60);
+
+  let lastY = 0;
+  for (const element of elements) {
+    context.fillText(element.type + ": " + element.x.toFixed(2) + ", " + element.y.toFixed(2), 10, 80 + 20 * elements.indexOf(element));
+
+    lastY = 80 + 20 * elements.indexOf(element);
+  }
+
+  for (const element of selectedElements) {
+    context.fillText("Selected: " + element.type + ": " + element.x.toFixed(2) + ", " + element.y.toFixed(2), 10, 80 + 20 * elements.indexOf(element) + lastY);
+  }
 }
 
-export const LeinwaldRenderer = (context: CanvasRenderingContext2D, scene: LeinwaldScene) => {
+export const LeinwaldRenderer = (context: CanvasRenderingContext2D, scene: LeinwaldScene, debug = true) => {
   const { canvas } = context;
   const { width, height } = canvas;
-  const { elements, viewportTransform, selectedElements, hoveredElements } = scene;
+  const { elements, viewportTransform } = scene;
 
   const renderStart = performance.now();
 
@@ -99,8 +115,6 @@ export const LeinwaldRenderer = (context: CanvasRenderingContext2D, scene: Leinw
   elements.forEach((element) => {
     if (element.type === 'rect') {
       renderRect(context, element as LeinwaldRect);
-    } else if (element.type === 'pointer') {
-      renderPointer(context, element as LeinwaldPointer);
     } else if (element.type === LeinwaldElementType.Circle) {
       renderCircle(context, element as LeinwaldCircle);
     } else if (element.type === LeinwaldElementType.Image) {
@@ -110,74 +124,9 @@ export const LeinwaldRenderer = (context: CanvasRenderingContext2D, scene: Leinw
     }
   })
 
-  hoveredElements.forEach((element) => {
-    if (selectedElements.includes(element)) {
-      return;
-    }
-
-    let { x, y } = element;
-
-    let width: number = 0
-    let height: number = 0
-    if (element.type === 'rect') {
-      width = (element as LeinwaldRect).width;
-      height = (element as LeinwaldRect).height;
-    } else if (element.type === 'pointer') {
-      width = (element as LeinwaldPointer).width;
-      height = (element as LeinwaldPointer).height;
-    } else if (element.type === LeinwaldElementType.Circle) {
-      x = (element as LeinwaldCircle).x - (element as LeinwaldCircle).radius;
-      y = (element as LeinwaldCircle).y - (element as LeinwaldCircle).radius;
-      width = (element as LeinwaldCircle).radius * 2;
-      height = (element as LeinwaldCircle).radius * 2;
-    } else if (element.type === LeinwaldElementType.Image) {
-      width = (element as LeinwaldImage).width;
-      height = (element as LeinwaldImage).height;
-    } else if (element.type === LeinwaldElementType.Text) {
-      const boundingBox = calculateTextBoundingBox(element as LeinwaldText, context);
-      width = boundingBox.width;
-      height = boundingBox.height;
-    }
-
-    context.strokeStyle = '#ababab';
-    context.lineWidth = 1;
-    context.strokeRect(x - 10, y - 10, width + 20, height + 20);
-  })
-
-  selectedElements.forEach((element) => {
-    let { x, y } = element;
-
-    let width: number = 0
-    let height: number = 0
-    if (element.type === 'rect') {
-      width = (element as LeinwaldRect).width;
-      height = (element as LeinwaldRect).height;
-    } else if (element.type === 'pointer') {
-      width = (element as LeinwaldPointer).width;
-      height = (element as LeinwaldPointer).height;
-    } else if (element.type === LeinwaldElementType.Circle) {
-      x = (element as LeinwaldCircle).x - (element as LeinwaldCircle).radius;
-      y = (element as LeinwaldCircle).y - (element as LeinwaldCircle).radius;
-      width = (element as LeinwaldCircle).radius * 2;
-      height = (element as LeinwaldCircle).radius * 2;
-    } else if (element.type === LeinwaldElementType.Image) {
-      width = (element as LeinwaldImage).width;
-      height = (element as LeinwaldImage).height;
-    } else if (element.type === LeinwaldElementType.Text) {
-      const boundingBox = calculateTextBoundingBox(element as LeinwaldText, context);
-
-      width = boundingBox.width;
-      height = boundingBox.height;
-    }
-
-    context.strokeStyle = 'black';
-    context.lineWidth = 1;
-    context.strokeRect(x - 10, y - 10, width + 20, height + 20);
-  })
-
   const renderEnd = performance.now();
 
-  context.setTransform(1, 0, 0, 1, 0, 0);
-  context.font = "16px arial";
-  context.fillText("Render time: " + (renderEnd - renderStart).toFixed(2) + "ms", 10, 40);
+  if (debug) {
+    renderDebugPanel(context, scene, renderEnd - renderStart);
+  }
 }

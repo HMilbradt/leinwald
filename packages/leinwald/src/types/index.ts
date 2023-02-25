@@ -19,10 +19,9 @@ export interface LeinwaldElement {
   type: LeinwaldElementType;
   x: number;
   y: number;
-  scaleX?: number;
-  scaleY?: number;
   fill?: string;
   stroke?: string;
+  rotation: number;
 }
 
 export interface LeinwaldRect extends LeinwaldElement {
@@ -34,12 +33,6 @@ export interface LeinwaldRect extends LeinwaldElement {
 export interface LeinwaldCircle extends LeinwaldElement {
   type: LeinwaldElementType.Circle;
   radius: number;
-}
-
-export interface LeinwaldPointer extends LeinwaldElement {
-  type: LeinwaldElementType.Pointer;
-  width: number;
-  height: number;
 }
 
 export interface LeinwaldImage extends LeinwaldElement {

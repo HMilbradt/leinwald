@@ -111,6 +111,7 @@ export const Leinwald = (options: LeinwaldOptions) => {
       scaleX: 1,
       scaleY: 1,
       fill: 'red',
+      rotation: 45
     } as LeinwaldRect,
     {
 
@@ -123,6 +124,7 @@ export const Leinwald = (options: LeinwaldOptions) => {
       scaleX: 1,
       scaleY: 1,
       fill: 'blue',
+      rotation: 0
     } as LeinwaldRect,
     {
       id: 'circle-1',
@@ -133,6 +135,7 @@ export const Leinwald = (options: LeinwaldOptions) => {
       scaleX: 1,
       scaleY: 1,
       fill: 'green',
+      rotation: 0
     } as LeinwaldCircle,
     {
       id: 'text-1',
@@ -144,6 +147,7 @@ export const Leinwald = (options: LeinwaldOptions) => {
       scaleX: 1,
       scaleY: 1,
       fill: 'black',
+      rotation: 0
     } as LeinwaldText,
   ]
 
@@ -253,9 +257,8 @@ export const Leinwald = (options: LeinwaldOptions) => {
         y: 100,
         width: 100,
         height: 100,
-        scaleX: 1,
-        scaleY: 1,
         image,
+        rotation: 0,
       }
 
       scene.elements.push(element);
