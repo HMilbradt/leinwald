@@ -250,13 +250,29 @@ export const Leinwald = (options: LeinwaldOptions) => {
   return {
     addImage: (image: HTMLImageElement) => {
 
+      const desiredWidth = 100;
+      const desiredHeight = 100;
+
+      const imageAspectRatio = image.width / image.height;
+      const desiredAspectRatio = desiredWidth / desiredHeight;
+
+      let width = desiredWidth;
+      let height = desiredHeight;
+
+      if (imageAspectRatio > desiredAspectRatio) {
+        height = desiredWidth / imageAspectRatio;
+      } else {
+        width = desiredHeight * imageAspectRatio;
+      }
+
+
       const element: LeinwaldImage = {
         id: 'image-1',
         type: LeinwaldElementType.Image,
         x: 100,
         y: 100,
-        width: 100,
-        height: 100,
+        width: width,
+        height: height,
         image,
         rotation: 0,
       }

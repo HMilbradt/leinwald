@@ -10,7 +10,6 @@ export enum LeinwaldElementType {
   Circle = 'circle',
   Text = 'text',
   Pointer = 'pointer',
-  Interaction = 'interaction',
   Image = 'image',
 }
 
