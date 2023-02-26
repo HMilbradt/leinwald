@@ -1,8 +1,8 @@
 import { BoundingBox, Circle, LeinwaldCircle, LeinwaldElement, LeinwaldElementType, LeinwaldImage, LeinwaldRect, LeinwaldScene, LeinwaldText, Point, ViewportTransform } from "../types";
 
-export const hitTest = (event: MouseEvent, scene: LeinwaldScene, context: CanvasRenderingContext2D) => {
+export const hitTest = (event: MouseEvent, scene: LeinwaldScene, viewportTransform: ViewportTransform, context: CanvasRenderingContext2D) => {
   const { x: screenX, y: screenY } = event;
-  const { elements, viewportTransform } = scene;
+  const { elements } = scene;
   const { x, y } = toWorldCoordinates(screenX, screenY, viewportTransform);
 
   let hit: LeinwaldElement | undefined;

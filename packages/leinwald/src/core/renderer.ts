@@ -1,4 +1,4 @@
-import { LeinwaldCircle, LeinwaldElementType, LeinwaldImage, LeinwaldRect, LeinwaldScene, LeinwaldText, ViewportTransform } from "../types";
+import { LeinwaldCircle, LeinwaldElement, LeinwaldElementType, LeinwaldImage, LeinwaldRect, LeinwaldScene, LeinwaldText, ViewportTransform } from "../types";
 
 const BACKGROUND_CIRCLE_RADIUS = 1.5;
 const BACKGROUND_CIRCLE_COLOR = '#ababab';
@@ -57,13 +57,13 @@ const renderCircle = (context: CanvasRenderingContext2D, element: LeinwaldCircle
   context.stroke();
 }
 
-const renderDebugPanel = (context: CanvasRenderingContext2D, scene: LeinwaldScene, renderTime: number) => {
-
+export const renderDebugPanel = (context: CanvasRenderingContext2D, scene: LeinwaldScene, viewportTransform: ViewportTransform, renderTime: number) => {
   context.setTransform(1, 0, 0, 1, 0, 0);
   context.font = "16px arial";
+  context.fillStyle = "black";
   context.fillText("Render time: " + (renderTime).toFixed(2) + "ms", 10, 40);
 
-  const { elements, viewportTransform, selectedElements } = scene;
+  const { elements, selectedElements } = scene;
 
   const { x, y, scaleX, scaleY } = viewportTransform;
 
@@ -81,17 +81,9 @@ const renderDebugPanel = (context: CanvasRenderingContext2D, scene: LeinwaldScen
   }
 }
 
-export const LeinwaldRenderer = (context: CanvasRenderingContext2D, scene: LeinwaldScene, debug = true) => {
+export const renderGrid = (context: CanvasRenderingContext2D, viewportTransform: ViewportTransform) => {
   const { canvas } = context;
   const { width, height } = canvas;
-  const { elements, viewportTransform } = scene;
-
-  const renderStart = performance.now();
-
-  context.setTransform(1, 0, 0, 1, 0, 0);
-  context.clearRect(0, 0, width, height);
-
-  context.setTransform(viewportTransform.scaleX, 0, 0, viewportTransform.scaleY, viewportTransform.x, viewportTransform.y);
 
   const gridStep = 60;
 
@@ -111,6 +103,12 @@ export const LeinwaldRenderer = (context: CanvasRenderingContext2D, scene: Leinw
       context.fill();
     }
   }
+}
+
+export const renderScene = (context: CanvasRenderingContext2D, elements: LeinwaldElement[], viewportTransform: ViewportTransform) => {
+  const renderStart = performance.now();
+
+  context.setTransform(viewportTransform.scaleX, 0, 0, viewportTransform.scaleY, viewportTransform.x, viewportTransform.y);
 
   elements.forEach((element) => {
     if (element.type === 'rect') {
@@ -126,7 +124,13 @@ export const LeinwaldRenderer = (context: CanvasRenderingContext2D, scene: Leinw
 
   const renderEnd = performance.now();
 
-  if (debug) {
-    renderDebugPanel(context, scene, renderEnd - renderStart);
-  }
+  return renderEnd - renderStart;
+}
+
+export const clear = (context: CanvasRenderingContext2D) => {
+  const { canvas } = context;
+  const { width, height } = canvas;
+
+  context.setTransform(1, 0, 0, 1, 0, 0);
+  context.clearRect(0, 0, width, height);
 }

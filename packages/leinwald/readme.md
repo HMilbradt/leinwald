@@ -12,10 +12,9 @@ At it's core, LeinWald is built around function programming paradigms.  This ens
 
 # Core Concepts
 
-- Renderer: Responsible for taking a scene and rendering it down to a canvas.  This is where the translation from objects into graphics happens.
-- Canvas: This is a wrapper around the HTML5 Canvas element.  It is a target for the renderer to draw to.
-- Scene: A scene is a data object that contains everything required to render.  This includes elements, the camera, background, etc.
-
-The Canvas is responsible for drawing graphics.  It is a wrapper around the HTML5 Canvas element, and provides a simple API for drawing shapes, lines, and text.  The Canvas also provides a simple API for loading images, and drawing them to the canvas.
-
-On top of the Canvas, we have the SceneManager.  It's duty is to manage "scenes", which are data objects that contain all information needed to render a Scene.
+- Renderer
+  - Canvas
+  - Context
+- Editor
+  - Scene
+  

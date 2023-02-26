@@ -52,7 +52,6 @@ export interface LeinwaldText extends LeinwaldElement {
 
 export interface LeinwaldScene {
   elements: LeinwaldElement[];
-  viewportTransform: ViewportTransform;
   selectedElements: LeinwaldElement[];
   hoveredElements: LeinwaldElement[];
 }
