@@ -88,3 +88,72 @@ export const toWorldCoordinates = (x: number, y: number, viewportTransform: View
     y: (y - viewportY) / scaleY,
   }
 }
+
+export const svgToBitmap = async (svg: string): Promise<ImageBitmap> => {
+  const blob = new Blob([svg], { type: "image/svg+xml" });
+  const url = URL.createObjectURL(blob);
+
+  const image = new Image();
+  image.src = url;
+
+  return new Promise((resolve, reject) => {
+    image.onload = () => {
+      resolve(createImageBitmap(image));
+    }
+
+    image.onerror = (err) => {
+      reject(err);
+    }
+  })
+}
+
+export const createHoverElement = (element: LeinwaldElement, context: CanvasRenderingContext2D): LeinwaldRect => {
+  let x: number = 0
+  let y: number = 0;
+  let width: number = 0;
+  let height: number = 0;
+
+  if (element.type === LeinwaldElementType.Rect) {
+    const { x: elementX, y: elementY, width: elementWidth, height: elementHeight } = element as LeinwaldRect;
+
+    x = elementX;
+    y = elementY;
+    width = elementWidth;
+    height = elementHeight;
+  } else if (element.type === LeinwaldElementType.Circle) {
+    const { x: elementX, y: elementY, radius } = element as LeinwaldCircle;
+
+    x = elementX - radius;
+    y = elementY - radius;
+    width = radius * 2;
+    height = radius * 2;
+  } else if (element.type === LeinwaldElementType.Image) {
+    const { x: elementX, y: elementY, width: elementWidth, height: elementHeight } = element as LeinwaldImage;
+
+    x = elementX;
+    y = elementY;
+    width = elementWidth;
+    height = elementHeight;
+  } else if (element.type === LeinwaldElementType.Text) {
+    const { x: elementX, y: elementY, fontSize } = element as LeinwaldText;
+
+    const { width: textWidth } = calculateTextBoundingBox(element as LeinwaldText, context);
+
+    x = elementX;
+    y = elementY;
+    width = textWidth;
+    height = fontSize;
+  }
+
+  return {
+    id: `hover-${element.id}`,
+    type: LeinwaldElementType.Rect,
+    x: x - 10,
+    y: y - 10,
+    width: width + 20,
+    height: height + 20,
+    stroke: "rgba(0, 0, 0, 0.5)",
+    rotation: element.rotation,
+    interactive: false,
+  }
+}

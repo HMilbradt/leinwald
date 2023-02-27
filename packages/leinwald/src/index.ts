@@ -1,6 +1,6 @@
 import { createCanvas } from './core/canvas';
 import { createEditor } from './editor/editor';
-import { LeinwaldElementType, LeinwaldImage, LeinwaldScene } from './types';
+import { LeinwaldScene } from './types';
 
 export interface LeinwaldOptions {
   element: HTMLElement | string;
@@ -32,40 +32,8 @@ export const Leinwald = (options: LeinwaldOptions) => {
   const editor = createEditor(canvas)
 
   return {
-    loadScene: (scene: LeinwaldScene) => {
-      editor.loadScene(scene);
-    },
+    loadScene: (scene: LeinwaldScene) => editor.loadScene(scene),
 
-    addImage: (image: HTMLImageElement) => {
-
-      const desiredWidth = 100;
-      const desiredHeight = 100;
-
-      const imageAspectRatio = image.width / image.height;
-      const desiredAspectRatio = desiredWidth / desiredHeight;
-
-      let width = desiredWidth;
-      let height = desiredHeight;
-
-      if (imageAspectRatio > desiredAspectRatio) {
-        height = desiredWidth / imageAspectRatio;
-      } else {
-        width = desiredHeight * imageAspectRatio;
-      }
-
-
-      const element: LeinwaldImage = {
-        id: 'image-1',
-        type: LeinwaldElementType.Image,
-        x: 100,
-        y: 100,
-        width: width,
-        height: height,
-        image,
-        rotation: 0,
-      }
-
-    },
     destroy: () => {
       htmlElement.removeChild(canvas);
     }

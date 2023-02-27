@@ -1,7 +1,7 @@
-import { LeinwaldScene, ViewportTransform } from "../types"
+import { LeinwaldElement, LeinwaldElementType, LeinwaldRect, LeinwaldScene, ViewportTransform } from "../types"
 import { createCanvasEventSubscriptions } from "../editor/events"
-import { renderScene, createScene, clear, renderDebugPanel, renderGrid } from "../core";
-import { hitTest } from "../utils";
+import { renderScene, createScene, clear, renderDebugPanel, renderGrid, BG_DOT_SVG } from "../core";
+import { createHoverElement, hitTest, svgToBitmap } from "../utils";
 
 export const createEditor = (canvas: HTMLCanvasElement) => {
   const context = canvas.getContext('2d');
@@ -21,8 +21,9 @@ export const createEditor = (canvas: HTMLCanvasElement) => {
     const hit = hitTest(event, scene, viewportTransform, context);
 
     if (hit) {
+      const hoverElement = createHoverElement(hit, context);
       canvas.style.cursor = 'pointer';
-      scene.hoveredElements = [hit];
+      scene.hoveredElements = [hoverElement];
     } else {
       canvas.style.cursor = 'default';
       scene.hoveredElements = [];
@@ -43,12 +44,12 @@ export const createEditor = (canvas: HTMLCanvasElement) => {
     let initialElementTransformX = 0;
     let initialElementTransformY = 0;
 
-    if (scene.hoveredElements.length > 0) {
+    const hit = hitTest(event, scene, viewportTransform, context);
 
-      const selectedElement = scene.hoveredElements[0];
-      initialElementTransformX = selectedElement.x
-      initialElementTransformY = selectedElement.y;
-      scene.selectedElements = [selectedElement];
+    if (hit) {
+      initialElementTransformX = hit.x
+      initialElementTransformY = hit.y;
+      scene.selectedElements = [hit];
     } else {
       scene.selectedElements = [];
     }
@@ -77,6 +78,8 @@ export const createEditor = (canvas: HTMLCanvasElement) => {
       mouseUp.unsubscribe();
       render()
     })
+
+    render()
   })
 
   events.onMouseWheel.subscribe((event) => {
@@ -101,16 +104,24 @@ export const createEditor = (canvas: HTMLCanvasElement) => {
 
     viewportTransform.x = newViewportX;
     viewportTransform.y = newViewportY;
+
+    render()
   })
 
-  const render = () => {
-    const renderStart = performance.now();
+  const bitmap = svgToBitmap(BG_DOT_SVG)
+
+  const render = async () => {
+
     clear(context)
-    renderGrid(context, viewportTransform)
+    const renderStart = performance.now();
+
+    renderGrid(context, viewportTransform, await bitmap)
     renderScene(context, scene.elements, viewportTransform)
     renderScene(context, scene.selectedElements, viewportTransform)
     renderScene(context, scene.hoveredElements, viewportTransform)
+
     const renderEnd = performance.now();
+
     renderDebugPanel(context, scene, viewportTransform, renderEnd - renderStart)
   }
 

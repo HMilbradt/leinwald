@@ -1,7 +1,14 @@
 import { LeinwaldCircle, LeinwaldElement, LeinwaldElementType, LeinwaldImage, LeinwaldRect, LeinwaldScene, LeinwaldText, ViewportTransform } from "../types";
+import { calculateTextBoundingBox } from "../utils";
 
 const BACKGROUND_CIRCLE_RADIUS = 1.5;
 const BACKGROUND_CIRCLE_COLOR = '#ababab';
+
+export const BG_DOT_SVG = `
+<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
+    <circle cx="50" cy="50" r="10" fill="${BACKGROUND_CIRCLE_COLOR}33" />
+</svg>
+`
 
 const renderImage = (context: CanvasRenderingContext2D, element: LeinwaldImage) => {
   const { x, y, width, height, image } = element;
@@ -12,6 +19,8 @@ const renderImage = (context: CanvasRenderingContext2D, element: LeinwaldImage) 
 const renderText = (context: CanvasRenderingContext2D, element: LeinwaldText) => {
   const { x, y, text, fontFace, fontSize, textAlign, textBaseline } = element;
 
+  const { width, height } = calculateTextBoundingBox(element, context);
+
   context.font = `${fontSize}px ${fontFace}`;
   context.textAlign = textAlign || 'left';
   context.textBaseline = textBaseline || 'top';
@@ -19,8 +28,20 @@ const renderText = (context: CanvasRenderingContext2D, element: LeinwaldText) =>
   context.fillStyle = element.fill || 'transparent';
   context.strokeStyle = element.stroke || 'transparent';
 
+  if (element.rotation !== 0) {
+    context.translate(x + width / 2, y + height / 2);
+    context.rotate(element.rotation * Math.PI / 180);
+    context.translate(-(x + width / 2), -(y + height / 2));
+  }
+
   context.fillText(text, x, y);
   context.strokeText(text, x, y);
+
+  if (element.rotation !== 0) {
+    context.translate(x + width / 2, y + height / 2);
+    context.rotate(-element.rotation * Math.PI / 180);
+    context.translate(-(x + width / 2), -(y + height / 2));
+  }
 }
 
 const renderRect = (context: CanvasRenderingContext2D, element: LeinwaldRect) => {
@@ -55,6 +76,7 @@ const renderCircle = (context: CanvasRenderingContext2D, element: LeinwaldCircle
   context.arc(x, y, radius, 0, 2 * Math.PI);
   context.fill();
   context.stroke();
+  context.closePath();
 }
 
 export const renderDebugPanel = (context: CanvasRenderingContext2D, scene: LeinwaldScene, viewportTransform: ViewportTransform, renderTime: number) => {
@@ -81,28 +103,34 @@ export const renderDebugPanel = (context: CanvasRenderingContext2D, scene: Leinw
   }
 }
 
-export const renderGrid = (context: CanvasRenderingContext2D, viewportTransform: ViewportTransform) => {
+export const renderGrid = (context: CanvasRenderingContext2D, viewportTransform: ViewportTransform, image: ImageBitmap) => {
   const { canvas } = context;
   const { width, height } = canvas;
 
-  const gridStep = 60;
+  context.setTransform(viewportTransform.scaleX, 0, 0, viewportTransform.scaleY, viewportTransform.x, viewportTransform.y);
 
-  const gridWidth = -viewportTransform.x + width + gridStep;
-  const gridHeight = -viewportTransform.y + height + gridStep;
-
-  const offsetX = -viewportTransform.x % gridStep;
-  const offsetY = -viewportTransform.y % gridStep;
-  const startX = -viewportTransform.x - gridStep - offsetX;
-  const startY = -viewportTransform.y - gridStep - offsetY;
-
-  for (let i = startX; i < gridWidth; i += gridStep) {
-    for (let j = startY; j < gridHeight; j += gridStep) {
-      context.beginPath();
-      context.arc(i, j, BACKGROUND_CIRCLE_RADIUS, 0, 2 * Math.PI);
-      context.fillStyle = BACKGROUND_CIRCLE_COLOR;
-      context.fill();
-    }
+  let gridStep = 60;
+  if (viewportTransform.scaleX < 0.5) {
+    gridStep = 120;
   }
+
+  const offsetX = (-viewportTransform.x % gridStep);
+  const offsetY = (-viewportTransform.y % gridStep);
+
+  const startX = (-viewportTransform.x - gridStep - offsetX) / viewportTransform.scaleX;
+  const startY = (-viewportTransform.y - gridStep - offsetY) / viewportTransform.scaleY;
+  const endX = (-viewportTransform.x + width) / viewportTransform.scaleX;
+  const endY = (-viewportTransform.y + height) / viewportTransform.scaleY;
+
+  const pattern = context.createPattern(image, 'repeat');
+
+  if (!pattern) {
+    throw new Error('Could not create pattern');
+  }
+
+  context.fillStyle = pattern;
+
+  context.fillRect(startX, startY, endX - startX, endY - startY);
 }
 
 export const renderScene = (context: CanvasRenderingContext2D, elements: LeinwaldElement[], viewportTransform: ViewportTransform) => {

@@ -21,6 +21,7 @@ export interface LeinwaldElement {
   fill?: string;
   stroke?: string;
   rotation: number;
+  interactive?: boolean;
 }
 
 export interface LeinwaldRect extends LeinwaldElement {
@@ -38,7 +39,7 @@ export interface LeinwaldImage extends LeinwaldElement {
   type: LeinwaldElementType.Image;
   width: number;
   height: number;
-  image: HTMLImageElement;
+  image: ImageBitmap | HTMLImageElement | HTMLCanvasElement | HTMLVideoElement;
 }
 
 export interface LeinwaldText extends LeinwaldElement {

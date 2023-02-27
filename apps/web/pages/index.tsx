@@ -1,5 +1,5 @@
 import { Leinwald } from 'leinwald'
-import { LeinwaldElementType, LeinwaldRect, LeinwaldScene } from 'leinwald/src/types';
+import { LeinwaldCircle, LeinwaldElementType, LeinwaldImage, LeinwaldRect, LeinwaldScene, LeinwaldText } from 'leinwald/src/types';
 import React, { useEffect } from "react";
 
 export default function Web() {
@@ -23,23 +23,28 @@ export default function Web() {
         x: 300,
         y: 0,
         fill: 'blue',
+        rotation: 45,
       } as LeinwaldRect,
       {
-        type: LeinwaldElementType.Rect,
-        width: 100,
-        height: 100,
+        type: LeinwaldElementType.Circle,
+        radius: 150,
         x: 200,
         y: 600,
         fill: 'green',
-      } as LeinwaldRect,
+        rotation: 30,
+      } as LeinwaldCircle,
       {
-        type: LeinwaldElementType.Rect,
+        id: 'text',
+        type: LeinwaldElementType.Text,
+        text: 'Hello World',
         width: 100,
         height: 100,
-        x: 0,
-        y: 0,
+        x: 400,
+        y: 400,
         fill: 'red',
-      } as LeinwaldRect,
+        rotation: 30,
+        fontSize: 20,
+      } as LeinwaldText,
       {
         type: LeinwaldElementType.Rect,
         width: 45,
@@ -61,13 +66,24 @@ export default function Web() {
       element: windowRef.current!,
     })
 
-    // const image = new Image()
+    const image = new Image()
 
-    // image.src = "/image.jpg"
+    image.src = "/image.jpg"
 
-    // image.onload = () => {
-    //   leinwald.addImage(image)
-    // }
+    image.onload = async () => {
+
+      const bitmap = await createImageBitmap(image)
+      scene.elements.push({
+        id: 'image',
+        type: LeinwaldElementType.Image,
+        x: 200,
+        y: 500,
+        width: 100,
+        height: 100,
+        image: bitmap,
+        rotation: 0,
+      } as LeinwaldImage)
+    }
 
     leinwald.loadScene(scene)
 
